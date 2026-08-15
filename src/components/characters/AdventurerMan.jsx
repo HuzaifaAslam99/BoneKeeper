@@ -10,7 +10,7 @@ import * as THREE from 'three'
 
 // export function AdventurerMan({ controlled, itemRefs, grabFn, colliders, bounds = 24.5, ...props }) {
 // remove colliders from the props
-export function AdventurerMan({ controlled, itemRefs, grabFn, selfRef, bounds, carrying, setCarrying, ...props }) {
+export function AdventurerMan({ controlled, itemRefs, grabFn, selfRef, inputRef, bounds, carrying, setCarrying, ...props }) {
 
   const Idle = 'CharacterArmature|Idle'
   const Run = 'CharacterArmature|Run'
@@ -79,12 +79,12 @@ export function AdventurerMan({ controlled, itemRefs, grabFn, selfRef, bounds, c
     actions[Idle]?.reset().fadeIn(0.2).play()
   } , [actions])
 
-  useEffect(() => {
-    if (grabFn) grabFn.current = (id) => { if (!carrying) toggleGrab(id) }
-}, [grabFn, nodes])
+useEffect(() => { if (grabFn) grabFn.current = () => toggleGrab() }, [grabFn, nodes, carrying])
 
 
 useEffect(() => { if (selfRef) selfRef.current = group.current }, [selfRef])
+
+useEffect(() => { if (inputRef) inputRef.current = keys.current }, [inputRef])
 
 const toggleGrab = () => {
   const hand = nodes.WristR
@@ -151,26 +151,38 @@ const toggleGrab = () => {
   }, [controlled, carrying])
 
 
-  useEffect(() => {
-    if (!controlled) return
-    const onDown = () => { dragging.current = true }
-    const onUp = () => { dragging.current = false }
-    const onMove = (e) => {
-    if (!dragging.current) return
-      yaw.current -= e.movementX * 0.004
-      // pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.004, -0.6, 0.6)
-      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.004, -1.0, 0.8)
-    }
+useEffect(() => {
+  if (!controlled) return
+  const last = { x: 0, y: 0 }
 
-    window.addEventListener('pointerdown', onDown)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointermove', onMove)
-    return () => {
-      window.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointermove', onMove)
-    }
-  }, [[controlled]])
+  const onDown = (e) => {
+    if (e.target.closest?.('[data-ui]')) return   // don't look while using the joystick
+    dragging.current = true
+    last.x = e.clientX
+    last.y = e.clientY
+  }
+  const onUp = () => { dragging.current = false }
+  const onMove = (e) => {
+    if (!dragging.current) return
+    const mx = e.clientX - last.x
+    const my = e.clientY - last.y
+    last.x = e.clientX
+    last.y = e.clientY
+    yaw.current -= mx * 0.004
+    pitch.current = THREE.MathUtils.clamp(pitch.current - my * 0.004, -1.0, 0.8)
+  }
+
+  window.addEventListener('pointerdown', onDown)
+  window.addEventListener('pointerup', onUp)
+  window.addEventListener('pointercancel', onUp)
+  window.addEventListener('pointermove', onMove)
+  return () => {
+    window.removeEventListener('pointerdown', onDown)
+    window.removeEventListener('pointerup', onUp)
+    window.removeEventListener('pointercancel', onUp)
+    window.removeEventListener('pointermove', onMove)
+  }
+}, [controlled])
 
   // useEffect(() => {
   //   if (skin) materials.Skin.color.set(skin)
@@ -408,6 +420,7 @@ if (camera.current) {
     _ray.set(_pivotWorld, _camDir)
     _ray.far = wanted
     const hits = _ray.intersectObjects(list, false)
+    // const hits = _ray.intersectObjects(meshes, false)
     if (hits.length) {
       target = Math.max(hits[0].distance - CAM_MARGIN, CAM_MIN)
     }

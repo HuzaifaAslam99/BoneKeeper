@@ -8,11 +8,10 @@ import { AdventurerMan } from "./components/characters/AdventurerMan";
 import { Zombie } from "./components/zombies/Zombie.jsx";
 
 import { House } from "./components/world/House.jsx";
-// import { Bone } from './components/items/Bone.jsx'
 import { Item } from "./components/items/Item.jsx";
-
 import { useFrame } from "@react-three/fiber";
-// import { useState } from 'react'
+import { TouchControls } from "./ui/TouchControls.jsx";
+
 
 const DEPOT = [0, 0, -20];
 
@@ -55,8 +54,10 @@ export default function App() {
   ];
 
   const World = 170;
+
   const boneRef = useRef();
   const grabFn = useRef(null);
+  const inputRef = useRef(null);
   const playerRef = useRef();
 
   const [started, setStarted] = useState(false);
@@ -158,13 +159,13 @@ export default function App() {
             shadow-camera-far={World + 1}
           />
 
-          {/* <AdventurerMan controlled selfRef={playerRef} itemRefs={itemRefs} grabFn={grabFn} bounds={World / 2 - 0.5}
-               position={[0, 0, -6]} carrying={carrying} setCarrying={setCarrying} /> */}
 
           <AdventurerMan
             controlled={started && !ended}
             selfRef={playerRef}
+            inputRef={inputRef}
             itemRefs={itemRefs}
+            grabFn={grabFn}
             position={[0, 0, -6]}
             bounds={World / 2 - 0.5}
             carrying={carrying}
@@ -290,21 +291,9 @@ export default function App() {
         </div>
       )}
 
-      <div className="absolute top-4 left-4 text-white font-mono text-lg pointer-events-none">
-        <div className="flex gap-1 mb-2">
-          {Array.from({ length: MAX_HP }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-5 h-5 border-2 border-white ${i < hp ? "bg-red-600" : "bg-transparent"}`}
-            />
-          ))}
-        </div>
-        <div>
-          Relics delivered: {deposited} / {TOTAL_RELICS}
-        </div>
-        {carrying && <div>Press Enter to drop</div>}
-        {deposited >= TOTAL_RELICS && <div>All relics returned.</div>}
-      </div>
+      {isTouch && started && !ended && (
+        <TouchControls inputRef={inputRef} grabFn={grabFn} />
+      )}
 
       {!started && (
         <div
@@ -343,7 +332,6 @@ export default function App() {
             )}
           </div>
 
-          {/* {isTouch && started && !ended && <TouchControls />} */}
           <button
             onClick={() => setStarted(true)}
             className="mt-6 px-8 py-3 border border-white/40 hover:bg-white/10 tracking-wider"
