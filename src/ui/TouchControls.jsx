@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export function TouchControls({ inputRef, grabFn }) {
   const base = useRef(null)
@@ -12,6 +12,8 @@ export function TouchControls({ inputRef, grabFn }) {
     k['a'] = dx < -12
     k['d'] = dx > 12
   }
+
+  useEffect(() => () => write(0, 0), [])
 
   const move = (e) => {
     const r = base.current.getBoundingClientRect()

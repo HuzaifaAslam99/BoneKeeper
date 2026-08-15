@@ -144,9 +144,11 @@ const toggleGrab = () => {
     
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
-    return () => {
+return () => {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
+      for (const key in keys.current) keys.current[key] = false
+      wasMoving.current = false
     }
   }, [controlled, carrying])
 

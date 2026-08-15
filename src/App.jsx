@@ -1,7 +1,8 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import * as THREE from "three";
-import { useRef, useState } from "react";
+import { Text } from "@react-three/drei";
+import { useRef, useState, useMemo } from "react";
 
 import { CollidersProvider } from "./hooks/useColliders.jsx";
 import { AdventurerMan } from "./components/characters/AdventurerMan";
@@ -11,7 +12,6 @@ import { House } from "./components/world/House.jsx";
 import { Item } from "./components/items/Item.jsx";
 import { useFrame } from "@react-three/fiber";
 import { TouchControls } from "./ui/TouchControls.jsx";
-
 
 const DEPOT = [0, 0, -20];
 
@@ -68,6 +68,7 @@ export default function App() {
   const [items, setItems] = useState(START_ITEMS);
 
   const DEPOT = [0, 0, -20];
+  const SPAWN = [20, 0, -62];
 
   const itemRefs = useRef({});
 
@@ -133,8 +134,21 @@ export default function App() {
     setCarrying(null);
     setItems(START_ITEMS);
     itemRefs.current = {};
-    playerRef.current?.position.set(0, 0, -6);
+    playerRef.current?.position.set(...SPAWN);
   };
+
+  const arrowShape = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(0, 1); // tip
+    s.lineTo(-0.6, 0.2);
+    s.lineTo(-0.25, 0.2);
+    s.lineTo(-0.25, -1);
+    s.lineTo(0.25, -1);
+    s.lineTo(0.25, 0.2);
+    s.lineTo(0.6, 0.2);
+    s.closePath();
+    return s;
+  }, []);
 
   return (
     <div className="relative w-screen h-screen">
@@ -159,14 +173,13 @@ export default function App() {
             shadow-camera-far={World + 1}
           />
 
-
           <AdventurerMan
             controlled={started && !ended}
             selfRef={playerRef}
             inputRef={inputRef}
             itemRefs={itemRefs}
             grabFn={grabFn}
-            position={[0, 0, -6]}
+            position={SPAWN}
             bounds={World / 2 - 0.5}
             carrying={carrying}
             setCarrying={setCarrying}
@@ -262,14 +275,29 @@ export default function App() {
             <meshStandardMaterial color="#2a2a30" />
           </mesh>
 
-          {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-60, 1.2, 50]} receiveShadow>
-          <planeGeometry args={[World, World]} />
-          <meshStandardMaterial color="#2a2a30" />
-        </mesh> */}
-
           <mesh position={[DEPOT[0], 0.5, DEPOT[2]]} receiveShadow>
             <cylinderGeometry args={[3, 3, 0.1, 24]} />
             <meshStandardMaterial color="#4a3a2a" />
+          </mesh>
+
+          <Text
+            position={[DEPOT[0], 0.56, DEPOT[2]]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            fontSize={0.8}
+            color="#e8dcc8"
+            anchorX="center"
+            anchorY="middle"
+          >
+            DEPOSIT
+          </Text>
+
+          <mesh
+            position={[DEPOT[0], 1.5, DEPOT[2]]}
+            rotation={[0, 0, Math.PI]}
+            scale={0.5}
+          >
+            <shapeGeometry args={[arrowShape]} />
+            <meshBasicMaterial color="#e8dcc8" side={THREE.DoubleSide} />
           </mesh>
         </CollidersProvider>
       </Canvas>
